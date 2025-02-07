@@ -4,6 +4,13 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertBookSchema, insertOrderSchema, insertCategorySchema } from "@shared/schema";
 
+function isAuthenticated(req: any, res: any, next: any) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).send("Authentication required");
+  }
+  next();
+}
+
 function isAdmin(req: any, res: any, next: any) {
   if (!req.user?.isAdmin) {
     return res.status(403).send("Admin access required");
