@@ -46,8 +46,55 @@ export function registerRoutes(app: Express): Server {
 
   // Book routes
   app.get("/api/books", async (_req, res) => {
-    const books = await storage.getBooks();
-    res.json(books);
+    // First check if there are any books
+    const existingBooks = await storage.getBooks();
+    if (existingBooks.length === 0) {
+      // Add sample books if none exist
+      const sampleBooks = [
+        {
+          title: "The Great Gatsby",
+          author: "F. Scott Fitzgerald",
+          description: "A story of decadence and excess",
+          price: 999,
+          stock: 10,
+          coverUrl: "https://images.unsplash.com/photo-1543002588-bfa74002ed7e",
+          categoryId: "literature"
+        },
+        {
+          title: "To Kill a Mockingbird",
+          author: "Harper Lee",
+          description: "A classic of modern American literature",
+          price: 1299,
+          stock: 7,
+          coverUrl: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c",
+          categoryId: "literature"
+        },
+        {
+          title: "1984",
+          author: "George Orwell",
+          description: "A dystopian social science fiction novel",
+          price: 1099,
+          stock: 15,
+          coverUrl: "https://images.unsplash.com/photo-1541963463532-d68292c34b19",
+          categoryId: "fiction"
+        },
+        {
+          title: "The Hobbit",
+          author: "J.R.R. Tolkien",
+          description: "A fantasy novel set in Middle-earth",
+          price: 1499,
+          stock: 12,
+          coverUrl: "https://images.unsplash.com/photo-1629992101753-56d196c8aabb",
+          categoryId: "fantasy"
+        }
+      ];
+
+      for (const book of sampleBooks) {
+        await storage.createBook(book);
+      }
+      return res.json(sampleBooks);
+    }
+    res.json(existingBooks);
   });
 
   app.get("/api/books/low-stock", isAdmin, async (_req, res) => {
