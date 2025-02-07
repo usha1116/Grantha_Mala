@@ -17,6 +17,24 @@ export function registerRoutes(app: Express): Server {
   // Category routes
   app.get("/api/categories", async (_req, res) => {
     const categories = await storage.getCategories();
+    if (categories.length === 0) {
+      // Add default categories if none exist
+      const defaultCategories = [
+        { name: "Fiction", description: "Fictional stories and novels" },
+        { name: "Non-Fiction", description: "Educational and factual books" },
+        { name: "Science Fiction", description: "Futuristic and sci-fi novels" },
+        { name: "Fantasy", description: "Fantasy and magical stories" },
+        { name: "Mystery", description: "Mystery and detective novels" },
+        { name: "Romance", description: "Romance novels and stories" },
+        { name: "Children", description: "Books for young readers" },
+        { name: "Biography", description: "Life stories and memoirs" }
+      ];
+
+      for (const category of defaultCategories) {
+        await storage.createCategory(category);
+      }
+      return res.json(defaultCategories);
+    }
     res.json(categories);
   });
 
@@ -50,6 +68,13 @@ export function registerRoutes(app: Express): Server {
     const existingBooks = await storage.getBooks();
     if (existingBooks.length === 0) {
       // Add sample books if none exist
+      // Fetch all categories first
+      const categories = await storage.getCategories();
+      const getCategoryId = (name) => {
+        const category = categories.find(c => c.name.toLowerCase() === name.toLowerCase());
+        return category?._id;
+      };
+
       const sampleBooks = [
         {
           title: "The Great Gatsby",
@@ -58,7 +83,7 @@ export function registerRoutes(app: Express): Server {
           price: 999,
           stock: 10,
           coverUrl: "https://images.unsplash.com/photo-1543002588-bfa74002ed7e",
-          categoryId: "classics"
+          categoryId: getCategoryId("Fiction")
         },
         {
           title: "To Kill a Mockingbird",
