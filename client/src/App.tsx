@@ -25,7 +25,7 @@ function Router() {
     <Switch>
       <Route path="/" component={HomePage} />
       <Route path="/auth" component={AuthPage} />
-      <Route path="/cart" component={CartPage} />
+      <ProtectedRoute path="/cart" component={CartPage} />
       <AdminRoute component={Dashboard} />
       <Route component={NotFound} />
     </Switch>

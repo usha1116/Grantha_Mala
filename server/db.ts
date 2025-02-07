@@ -1,6 +1,16 @@
 import mongoose from 'mongoose';
 import { log } from './vite';
-import { Book, Category } from './models';
+import { Book, Category, User } from './models';
+import { scrypt, randomBytes } from "crypto";
+import { promisify } from "util";
+
+const scryptAsync = promisify(scrypt);
+
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
 
 if (!process.env.MONGODB_URI) {
   throw new Error("MONGODB_URI environment variable is not set");
@@ -13,6 +23,22 @@ mongoose.connect(process.env.MONGODB_URI)
 
     // Seed initial data if necessary
     const categoryCount = await Category.countDocuments();
+    const userCount = await User.countDocuments();
+
+    if (userCount === 0) {
+      log('Creating admin user...');
+      try {
+        await User.create({
+          username: "admin",
+          password: await hashPassword("admin123"),
+          isAdmin: true
+        });
+        log('Admin user created successfully');
+      } catch (error) {
+        log('Error creating admin user:', error);
+      }
+    }
+
     if (categoryCount === 0) {
       log('Seeding initial data...');
       try {
