@@ -192,7 +192,8 @@ function CheckoutForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const parsed = insertOrderSchema.safeParse({
-      ...formData,
+      customerName: formData.customerName,
+      address: formData.address,
       items,
       status: "pending"
     });
