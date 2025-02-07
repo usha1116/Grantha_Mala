@@ -197,7 +197,7 @@ function CheckoutForm({
       address: formData.address,
       paymentMethod: formData.paymentMethod,
       items: items.map(item => ({
-        bookId: item.book._id.toString(),
+        bookId: item.book.id.toString(),
         quantity: item.quantity
       })),
       status: "pending",
