@@ -58,7 +58,7 @@ export function registerRoutes(app: Express): Server {
           price: 999,
           stock: 10,
           coverUrl: "https://images.unsplash.com/photo-1543002588-bfa74002ed7e",
-          categoryId: "literature"
+          categoryId: "classics"
         },
         {
           title: "To Kill a Mockingbird",
@@ -67,7 +67,7 @@ export function registerRoutes(app: Express): Server {
           price: 1299,
           stock: 7,
           coverUrl: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c",
-          categoryId: "literature"
+          categoryId: "classics"
         },
         {
           title: "1984",
@@ -86,6 +86,42 @@ export function registerRoutes(app: Express): Server {
           stock: 12,
           coverUrl: "https://images.unsplash.com/photo-1629992101753-56d196c8aabb",
           categoryId: "fantasy"
+        },
+        {
+          title: "Dune",
+          author: "Frank Herbert",
+          description: "A science fiction masterpiece",
+          price: 1399,
+          stock: 20,
+          coverUrl: "https://images.unsplash.com/photo-1589203832113-de6c1c019c6c",
+          categoryId: "scifi"
+        },
+        {
+          title: "The Name of the Wind",
+          author: "Patrick Rothfuss",
+          description: "Epic fantasy tale",
+          price: 1599,
+          stock: 8,
+          coverUrl: "https://images.unsplash.com/photo-1589203832113-de6c1c019c6c",
+          categoryId: "fantasy"
+        },
+        {
+          title: "Project Hail Mary",
+          author: "Andy Weir",
+          description: "Sci-fi adventure in space",
+          price: 1699,
+          stock: 25,
+          coverUrl: "https://images.unsplash.com/photo-1589203832113-de6c1c019c6c",
+          categoryId: "scifi"
+        },
+        {
+          title: "Pride and Prejudice",
+          author: "Jane Austen",
+          description: "A romantic classic",
+          price: 999,
+          stock: 15,
+          coverUrl: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c",
+          categoryId: "classics"
         }
       ];
 
