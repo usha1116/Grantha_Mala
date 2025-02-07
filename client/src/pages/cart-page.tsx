@@ -153,7 +153,7 @@ function CheckoutForm({
   items, 
   onSuccess 
 }: { 
-  items: Array<{bookId: number, quantity: number}>,
+  items: Array<{bookId: string, quantity: number}>,
   onSuccess: () => void
 }) {
   const { toast } = useToast();
@@ -197,7 +197,7 @@ function CheckoutForm({
       address: formData.address,
       paymentMethod: formData.paymentMethod,
       items: items.map(item => ({
-        bookId: item.book.id.toString(),
+        bookId: item.bookId,
         quantity: item.quantity
       })),
       status: "pending",
