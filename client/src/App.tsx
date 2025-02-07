@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
+import CartPage from "@/pages/cart-page";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/admin/dashboard";
 
@@ -24,6 +25,7 @@ function Router() {
     <Switch>
       <Route path="/" component={HomePage} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/cart" component={CartPage} />
       <AdminRoute component={Dashboard} />
       <Route component={NotFound} />
     </Switch>
