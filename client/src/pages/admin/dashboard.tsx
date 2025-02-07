@@ -380,6 +380,8 @@ function OrderManager() {
               <TableHead>Items</TableHead>
               <TableHead>Total</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Payment Method</TableHead>
+              <TableHead>Payment Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -417,35 +419,24 @@ function OrderManager() {
                       {order.status}
                     </div>
                   </TableCell>
+                  <TableCell>{order.paymentMethod}</TableCell>
+                  <TableCell>{order.paymentStatus}</TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      {order.status === 'pending' && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="default"
-                            onClick={() => updateStatusMutation.mutate({
-                              id: order.id,
-                              status: 'completed'
-                            })}
-                            disabled={updateStatusMutation.isPending}
-                          >
-                            Accept
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => updateStatusMutation.mutate({
-                              id: order.id,
-                              status: 'cancelled'
-                            })}
-                            disabled={updateStatusMutation.isPending}
-                          >
-                            Reject
-                          </Button>
-                        </>
-                      )}
-                    </div>
+                    <select
+                      className="p-2 border rounded"
+                      value={order.status}
+                      onChange={(e) => updateStatusMutation.mutate({
+                        id: order.id,
+                        status: e.target.value
+                      })}
+                      disabled={updateStatusMutation.isPending}
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="processing">Processing</option>
+                      <option value="shipped">Shipped</option>
+                      <option value="delivered">Delivered</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
                   </TableCell>
                 </TableRow>
               );

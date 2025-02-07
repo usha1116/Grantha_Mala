@@ -160,7 +160,8 @@ function CheckoutForm({
   const [, navigate] = useLocation();
   const [formData, setFormData] = useState({
     customerName: '',
-    address: ''
+    address: '',
+    paymentMethod: 'cod'
   });
 
   const orderMutation = useMutation({
@@ -229,6 +230,33 @@ function CheckoutForm({
           onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
           required
         />
+      </div>
+      <div className="space-y-2">
+        <Label>Payment Method</Label>
+        <div className="space-x-4">
+          <label className="inline-flex items-center">
+            <input
+              type="radio"
+              name="paymentMethod"
+              value="cod"
+              checked={formData.paymentMethod === 'cod'}
+              onChange={(e) => setFormData(prev => ({ ...prev, paymentMethod: e.target.value }))}
+              className="mr-2"
+            />
+            Cash on Delivery
+          </label>
+          <label className="inline-flex items-center">
+            <input
+              type="radio"
+              name="paymentMethod"
+              value="online"
+              checked={formData.paymentMethod === 'online'}
+              onChange={(e) => setFormData(prev => ({ ...prev, paymentMethod: e.target.value }))}
+              className="mr-2"
+            />
+            Online Payment
+          </label>
+        </div>
       </div>
       <Button 
         type="submit" 

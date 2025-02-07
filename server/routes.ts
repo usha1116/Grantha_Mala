@@ -208,11 +208,21 @@ export function registerRoutes(app: Express): Server {
     res.status(201).json(order);
   });
 
+  app.get("/api/orders/my-orders", isAuthenticated, async (req, res) => {
+    const orders = await storage.getOrdersByUser(req.user.id);
+    res.json(orders);
+  });
+
   app.patch("/api/orders/:id/status", isAdmin, async (req, res) => {
     const id = parseInt(req.params.id);
-    const { status } = req.body;
-    const order = await storage.updateOrderStatus(id, status);
+    const { status, paymentStatus } = req.body;
+    const order = await storage.updateOrder(id, { status, paymentStatus });
     res.json(order);
+  });
+
+  app.get("/api/admin/users", isAdmin, async (req, res) => {
+    const users = await storage.getAllUsers();
+    res.json(users);
   });
 
   const httpServer = createServer(app);
