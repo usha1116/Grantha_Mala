@@ -8,10 +8,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema, type InsertUser } from "@shared/schema";
 import { Redirect } from "wouter";
+import { z } from "zod";
 
 export default function AuthPage() {
   const { user } = useAuth();
-  
+
   if (user) {
     return <Redirect to="/" />;
   }
@@ -58,8 +59,15 @@ function AuthTabs() {
 
 function LoginForm() {
   const { loginMutation } = useAuth();
-  const form = useForm<InsertUser>({
-    resolver: zodResolver(insertUserSchema.omit({ confirmPassword: true })),
+  const loginSchema = z.object({
+    username: z.string().min(1, "Username is required"),
+    password: z.string().min(1, "Password is required"),
+  });
+
+  type LoginFormData = z.infer<typeof loginSchema>;
+
+  const form = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
   });
 
   return (
@@ -71,10 +79,16 @@ function LoginForm() {
         <div className="space-y-2">
           <Label htmlFor="username">Username</Label>
           <Input {...form.register("username")} />
+          {form.formState.errors.username && (
+            <p className="text-sm text-destructive">{form.formState.errors.username.message}</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
           <Input type="password" {...form.register("password")} />
+          {form.formState.errors.password && (
+            <p className="text-sm text-destructive">{form.formState.errors.password.message}</p>
+          )}
         </div>
         <Button
           type="submit"
@@ -103,14 +117,23 @@ function RegisterForm() {
         <div className="space-y-2">
           <Label htmlFor="username">Username</Label>
           <Input {...form.register("username")} />
+          {form.formState.errors.username && (
+            <p className="text-sm text-destructive">{form.formState.errors.username.message}</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
           <Input type="password" {...form.register("password")} />
+          {form.formState.errors.password && (
+            <p className="text-sm text-destructive">{form.formState.errors.password.message}</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="confirmPassword">Confirm Password</Label>
           <Input type="password" {...form.register("confirmPassword")} />
+          {form.formState.errors.confirmPassword && (
+            <p className="text-sm text-destructive">{form.formState.errors.confirmPassword.message}</p>
+          )}
         </div>
         <Button
           type="submit"

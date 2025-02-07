@@ -19,8 +19,8 @@ export function Navbar() {
   return (
     <header className="border-b">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/">
-          <a className="text-2xl font-serif">Bookstore</a>
+        <Link href="/" className="text-2xl font-serif">
+          Bookstore
         </Link>
 
         <div className="flex items-center gap-4">
@@ -29,7 +29,7 @@ export function Navbar() {
               <Button variant="ghost">Dashboard</Button>
             </Link>
           )}
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon" className="relative">
@@ -45,7 +45,7 @@ export function Navbar() {
               <DropdownMenuItem>
                 Cart Total: ${(useCart().total / 100).toFixed(2)}
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem asChild>
                 <Link href="/cart">View Cart</Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
