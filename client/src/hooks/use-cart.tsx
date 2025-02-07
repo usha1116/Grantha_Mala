@@ -29,10 +29,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = (book: Book, quantity = 1) => {
     setItems(current => {
-      const existing = current.find(item => item.book.id === book.id);
+      const existing = current.find(item => item.book._id === book._id);
       if (existing) {
         return current.map(item =>
-          item.book.id === book.id
+          item.book._id === book._id
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
