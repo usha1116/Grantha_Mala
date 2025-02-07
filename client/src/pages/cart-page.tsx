@@ -195,6 +195,7 @@ function CheckoutForm({
     const parsed = insertOrderSchema.safeParse({
       customerName: formData.customerName,
       address: formData.address,
+      paymentMethod: formData.paymentMethod,
       items,
       status: "pending"
     });

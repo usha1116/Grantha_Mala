@@ -36,11 +36,12 @@ export const users = z.object({
 export const orders = z.object({
   id: z.string(),
   items: z.array(z.object({
-    bookId: z.string(),
+    bookId: z.number(),
     quantity: z.number(),
   })),
   customerName: z.string(),
   address: z.string(),
+  paymentMethod: z.enum(["cod", "online"]),
   status: z.enum(["pending", "completed", "cancelled"]),
   createdAt: z.date(),
 });
