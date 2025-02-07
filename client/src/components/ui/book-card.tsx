@@ -6,10 +6,10 @@ import { useCart } from "@/hooks/use-cart";
 export function BookCard({ book }: { book: Book }) {
   const { addToCart } = useCart();
 
-  if (!book) return null;
+  if (!book || !book._id) return null;
 
   return (
-    <Card className="overflow-hidden">
+    <Card key={book._id} className="overflow-hidden">
       <div className="relative aspect-[3/4]">
         <img
           src={book.coverUrl}
