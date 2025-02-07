@@ -2,11 +2,19 @@ import { useCart } from "@/hooks/use-cart";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { Link } from "wouter";
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { insertOrderSchema } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 export default function CartPage() {
   const { items, removeFromCart, updateQuantity, total, clearCart } = useCart();
+  const [showCheckoutForm, setShowCheckoutForm] = useState(false);
 
   if (items.length === 0) {
     return (
@@ -105,9 +113,26 @@ export default function CartPage() {
                   <span>Total</span>
                   <span>${(total / 100).toFixed(2)}</span>
                 </div>
-                <Button className="w-full mt-4" size="lg">
-                  Proceed to Checkout
-                </Button>
+                {showCheckoutForm ? (
+                  <CheckoutForm 
+                    items={items.map(item => ({ 
+                      bookId: item.book.id, 
+                      quantity: item.quantity 
+                    }))}
+                    onSuccess={() => {
+                      clearCart();
+                      setShowCheckoutForm(false);
+                    }}
+                  />
+                ) : (
+                  <Button 
+                    className="w-full mt-4" 
+                    size="lg"
+                    onClick={() => setShowCheckoutForm(true)}
+                  >
+                    Proceed to Checkout
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   className="w-full"
@@ -121,5 +146,96 @@ export default function CartPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function CheckoutForm({ 
+  items, 
+  onSuccess 
+}: { 
+  items: Array<{bookId: number, quantity: number}>,
+  onSuccess: () => void
+}) {
+  const { toast } = useToast();
+  const [, navigate] = useLocation();
+  const [formData, setFormData] = useState({
+    customerName: '',
+    address: ''
+  });
+
+  const orderMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", "/api/orders", {
+        ...data,
+        items,
+        status: "pending"
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Order placed successfully",
+        description: "We'll process your order soon",
+      });
+      onSuccess();
+      navigate("/");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to place order",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsed = insertOrderSchema.safeParse({
+      ...formData,
+      items,
+      status: "pending"
+    });
+
+    if (!parsed.success) {
+      toast({
+        title: "Invalid form data",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    orderMutation.mutate(parsed.data);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+      <div className="space-y-2">
+        <Label htmlFor="customerName">Full Name</Label>
+        <Input
+          id="customerName"
+          value={formData.customerName}
+          onChange={(e) => setFormData(prev => ({ ...prev, customerName: e.target.value }))}
+          required
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="address">Delivery Address</Label>
+        <Input
+          id="address"
+          value={formData.address}
+          onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+          required
+        />
+      </div>
+      <Button 
+        type="submit" 
+        className="w-full"
+        disabled={orderMutation.isPending}
+      >
+        Place Order
+      </Button>
+    </form>
   );
 }
