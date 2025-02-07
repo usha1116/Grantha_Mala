@@ -36,14 +36,16 @@ export const users = z.object({
 export const orders = z.object({
   id: z.string(),
   items: z.array(z.object({
-    bookId: z.number(),
+    bookId: z.string(),
     quantity: z.number(),
   })),
   customerName: z.string(),
   address: z.string(),
   paymentMethod: z.enum(["cod", "online"]),
-  status: z.enum(["pending", "completed", "cancelled"]),
-  createdAt: z.date(),
+  status: z.enum(["pending", "processing", "shipped", "delivered", "cancelled"]),
+  totalAmount: z.number().optional(),
+  paymentStatus: z.enum(["pending", "paid", "failed"]).optional(),
+  createdAt: z.date().optional()
 });
 
 // Zod schemas

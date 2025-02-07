@@ -196,8 +196,12 @@ function CheckoutForm({
       customerName: formData.customerName,
       address: formData.address,
       paymentMethod: formData.paymentMethod,
-      items,
-      status: "pending"
+      items: items.map(item => ({
+        bookId: item.bookId.toString(),
+        quantity: item.quantity
+      })),
+      status: "pending",
+      paymentStatus: "pending"
     });
 
     if (!parsed.success) {
