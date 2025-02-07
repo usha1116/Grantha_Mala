@@ -456,7 +456,7 @@ function OrderManager() {
 
       <Card className="p-6">
         <h2 className="text-xl font-semibold mb-4">Order Statistics</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="p-4 border rounded-lg">
             <h3 className="text-sm font-medium text-muted-foreground">Pending Orders</h3>
             <p className="text-2xl font-bold mt-1">
@@ -474,6 +474,48 @@ function OrderManager() {
             <p className="text-2xl font-bold mt-1 text-red-600">
               {orders?.filter(order => order.status === 'cancelled').length || 0}
             </p>
+          </div>
+          <div className="p-4 border rounded-lg">
+            <h3 className="text-sm font-medium text-muted-foreground">Total Revenue</h3>
+            <p className="text-2xl font-bold mt-1 text-blue-600">
+              ${(orders?.reduce((sum, order) => {
+                if (order.status === 'completed') {
+                  return sum + order.items.reduce((itemSum, item) => {
+                    const book = getBookDetails(item.bookId);
+                    return itemSum + (book?.price || 0) * item.quantity;
+                  }, 0);
+                }
+                return sum;
+              }, 0) || 0) / 100).toFixed(2)}
+            </p>
+          </div>
+        </div>
+        <div className="mt-6">
+          <h3 className="text-lg font-semibold mb-3">Sales Summary</h3>
+          <div className="space-y-4">
+            <div className="bg-muted p-4 rounded-lg">
+              <h4 className="font-medium mb-2">Total Books Sold</h4>
+              <p className="text-xl">
+                {orders?.reduce((sum, order) => {
+                  if (order.status === 'completed') {
+                    return sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0);
+                  }
+                  return sum;
+                }, 0) || 0} books
+              </p>
+            </div>
+            <div className="bg-muted p-4 rounded-lg">
+              <h4 className="font-medium mb-2">Average Order Value</h4>
+              <p className="text-xl">
+                ${(orders?.filter(order => order.status === 'completed').reduce((sum, order) => {
+                  const orderTotal = order.items.reduce((itemSum, item) => {
+                    const book = getBookDetails(item.bookId);
+                    return itemSum + (book?.price || 0) * item.quantity;
+                  }, 0);
+                  return sum + orderTotal;
+                }, 0) / (orders?.filter(order => order.status === 'completed').length || 1) / 100).toFixed(2)}
+              </p>
+            </div>
           </div>
         </div>
       </Card>
