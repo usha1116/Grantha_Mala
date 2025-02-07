@@ -6,6 +6,8 @@ import { useCart } from "@/hooks/use-cart";
 export function BookCard({ book }: { book: Book }) {
   const { addToCart } = useCart();
 
+  if (!book) return null;
+
   return (
     <Card className="overflow-hidden">
       <div className="relative aspect-[3/4]">
