@@ -335,6 +335,8 @@ function OrderManager() {
     queryKey: ["/api/orders"],
   });
 
+  const { toast } = useToast();
+
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: Order["status"] }) => {
       const res = await apiRequest("PATCH", `/api/orders/${id}/status`, { status });
@@ -342,49 +344,139 @@ function OrderManager() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      toast({
+        title: "Order status updated",
+        description: "The order status has been successfully updated",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update order",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
+  const { data: books } = useQuery<Book[]>({
+    queryKey: ["/api/books"],
+  });
+
+  const getBookDetails = (bookId: number) => {
+    return books?.find(book => book.id === bookId);
+  };
+
   return (
-    <Card className="p-6">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Order ID</TableHead>
-            <TableHead>Customer</TableHead>
-            <TableHead>Items</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {orders?.map((order) => (
-            <TableRow key={order.id}>
-              <TableCell>#{order.id}</TableCell>
-              <TableCell>{order.customerName}</TableCell>
-              <TableCell>{order.items.length} items</TableCell>
-              <TableCell className="capitalize">{order.status}</TableCell>
-              <TableCell>
-                <select
-                  className="border rounded p-1"
-                  value={order.status}
-                  onChange={(e) =>
-                    updateStatusMutation.mutate({
-                      id: order.id,
-                      status: e.target.value as Order["status"],
-                    })
-                  }
-                  disabled={updateStatusMutation.isPending}
-                >
-                  <option value="pending">Pending</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-              </TableCell>
+    <div className="space-y-8">
+      <Card className="p-6">
+        <h2 className="text-xl font-semibold mb-4">Order Management</h2>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Order ID</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Customer</TableHead>
+              <TableHead>Address</TableHead>
+              <TableHead>Items</TableHead>
+              <TableHead>Total</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </Card>
+          </TableHeader>
+          <TableBody>
+            {orders?.map((order) => {
+              const total = order.items.reduce((sum, item) => {
+                const book = getBookDetails(item.bookId);
+                return sum + (book?.price || 0) * item.quantity;
+              }, 0);
+
+              return (
+                <TableRow key={order.id}>
+                  <TableCell>#{order.id}</TableCell>
+                  <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
+                  <TableCell>{order.customerName}</TableCell>
+                  <TableCell>{order.address}</TableCell>
+                  <TableCell>
+                    <div className="space-y-1">
+                      {order.items.map((item, index) => {
+                        const book = getBookDetails(item.bookId);
+                        return (
+                          <div key={index} className="text-sm">
+                            {book?.title} (x{item.quantity})
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </TableCell>
+                  <TableCell>${(total / 100).toFixed(2)}</TableCell>
+                  <TableCell>
+                    <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                      ${order.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'}`}>
+                      {order.status}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {order.status === 'pending' && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => updateStatusMutation.mutate({
+                              id: order.id,
+                              status: 'completed'
+                            })}
+                            disabled={updateStatusMutation.isPending}
+                          >
+                            Accept
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => updateStatusMutation.mutate({
+                              id: order.id,
+                              status: 'cancelled'
+                            })}
+                            disabled={updateStatusMutation.isPending}
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </Card>
+
+      <Card className="p-6">
+        <h2 className="text-xl font-semibold mb-4">Order Statistics</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-4 border rounded-lg">
+            <h3 className="text-sm font-medium text-muted-foreground">Pending Orders</h3>
+            <p className="text-2xl font-bold mt-1">
+              {orders?.filter(order => order.status === 'pending').length || 0}
+            </p>
+          </div>
+          <div className="p-4 border rounded-lg">
+            <h3 className="text-sm font-medium text-muted-foreground">Completed Orders</h3>
+            <p className="text-2xl font-bold mt-1 text-green-600">
+              {orders?.filter(order => order.status === 'completed').length || 0}
+            </p>
+          </div>
+          <div className="p-4 border rounded-lg">
+            <h3 className="text-sm font-medium text-muted-foreground">Cancelled Orders</h3>
+            <p className="text-2xl font-bold mt-1 text-red-600">
+              {orders?.filter(order => order.status === 'cancelled').length || 0}
+            </p>
+          </div>
+        </div>
+      </Card>
+    </div>
   );
 }
