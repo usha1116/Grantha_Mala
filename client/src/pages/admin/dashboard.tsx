@@ -478,7 +478,7 @@ function OrderManager() {
           <div className="p-4 border rounded-lg">
             <h3 className="text-sm font-medium text-muted-foreground">Total Revenue</h3>
             <p className="text-2xl font-bold mt-1 text-blue-600">
-              ${(orders?.reduce((sum, order) => {
+              ${((orders?.reduce((sum, order) => {
                 if (order.status === 'completed') {
                   return sum + order.items.reduce((itemSum, item) => {
                     const book = getBookDetails(item.bookId);
