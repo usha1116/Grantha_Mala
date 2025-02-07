@@ -1,142 +1,65 @@
-import { InsertUser, InsertBook, InsertOrder, InsertCategory, InsertInventoryHistory, User, Book, Order, Category, InventoryHistory } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import { Book, Category, Order, User, InventoryHistory } from "./models";
+import type { InsertUser, InsertBook, InsertOrder, InsertCategory, InsertInventoryHistory } from "@shared/schema";
+import type { IStorage } from "./storage";
 
 const MemoryStore = createMemoryStore(session);
 
-export interface IStorage {
-  // User management
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  
-  // Book management
-  getBooks(): Promise<Book[]>;
-  getBook(id: number): Promise<Book | undefined>;
-  createBook(book: InsertBook): Promise<Book>;
-  updateBook(id: number, book: Partial<InsertBook>): Promise<Book>;
-  deleteBook(id: number): Promise<void>;
-  getBooksWithLowStock(): Promise<Book[]>;
-  
-  // Category management
-  getCategories(): Promise<Category[]>;
-  getCategory(id: number): Promise<Category | undefined>;
-  createCategory(category: InsertCategory): Promise<Category>;
-  updateCategory(id: number, category: Partial<InsertCategory>): Promise<Category>;
-  deleteCategory(id: number): Promise<void>;
-  
-  // Inventory history
-  getInventoryHistory(bookId: number): Promise<InventoryHistory[]>;
-  recordInventoryChange(change: InsertInventoryHistory): Promise<InventoryHistory>;
-  
-  // Order management
-  getOrders(): Promise<Order[]>;
-  createOrder(order: InsertOrder): Promise<Order>;
-  updateOrderStatus(id: number, status: Order['status']): Promise<Order>;
-  
-  sessionStore: session.Store;
-}
-
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private books: Map<number, Book>;
-  private orders: Map<number, Order>;
-  private categories: Map<number, Category>;
-  private inventoryHistory: Map<number, InventoryHistory>;
-  private currentId: number;
+export class MongoDBStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    this.users = new Map();
-    this.books = new Map();
-    this.orders = new Map();
-    this.categories = new Map();
-    this.inventoryHistory = new Map();
-    this.currentId = 1;
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000,
     });
-
-    // Seed initial categories
-    const initialCategories: InsertCategory[] = [
-      { name: "Fiction", description: "Fictional literature" },
-      { name: "Non-Fiction", description: "Educational and informative books" },
-      { name: "Science", description: "Scientific publications" },
-    ];
-    initialCategories.forEach(cat => this.createCategory(cat));
-
-    // Seed initial books
-    const sampleBooks: InsertBook[] = [
-      {
-        title: "The Evolution of Everything",
-        author: "Matt Ridley",
-        description: "How ideas emerge",
-        price: 1999,
-        stock: 10,
-        lowStockThreshold: 5,
-        categoryId: 2, // Non-Fiction
-        coverUrl: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73",
-      },
-      {
-        title: "The Psychology of Money",
-        author: "Morgan Housel",
-        description: "Timeless lessons on wealth, greed, and happiness",
-        price: 1499,
-        stock: 15,
-        lowStockThreshold: 7,
-        categoryId: 2, // Non-Fiction
-        coverUrl: "https://images.unsplash.com/photo-1592496431122-2349e0fbc666",
-      },
-    ];
-    sampleBooks.forEach(book => this.createBook(book));
   }
 
-  // Existing methods
+  // User management
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const user = await User.findById(id).lean();
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const user = await User.findOne({ username }).lean();
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentId++;
-    const user: User = { ...insertUser, id, isAdmin: false };
-    this.users.set(id, user);
-    return user;
+    const user = new User(insertUser);
+    await user.save();
+    return user.toObject();
   }
 
-  // Updated and new book methods
+  // Book management
   async getBooks(): Promise<Book[]> {
-    return Array.from(this.books.values());
+    return Book.find().lean();
   }
 
   async getBook(id: number): Promise<Book | undefined> {
-    return this.books.get(id);
+    const book = await Book.findById(id).lean();
+    return book || undefined;
   }
 
   async createBook(insertBook: InsertBook): Promise<Book> {
-    const id = this.currentId++;
-    const book: Book = { ...insertBook, id };
-    this.books.set(id, book);
-    
+    const book = new Book(insertBook);
+    await book.save();
+
     // Record initial stock
     await this.recordInventoryChange({
-      bookId: id,
+      bookId: book._id,
       changeAmount: insertBook.stock,
       reason: "initial stock",
     });
-    
-    return book;
+
+    return book.toObject();
   }
 
   async updateBook(id: number, updateBook: Partial<InsertBook>): Promise<Book> {
-    const book = await this.getBook(id);
+    const book = await Book.findById(id);
     if (!book) throw new Error("Book not found");
-    
+
     // If stock is being updated, record the change
     if (updateBook.stock !== undefined) {
       const stockChange = updateBook.stock - book.stock;
@@ -148,111 +71,107 @@ export class MemStorage implements IStorage {
         });
       }
     }
-    
-    const updatedBook = { ...book, ...updateBook };
-    this.books.set(id, updatedBook);
-    return updatedBook;
+
+    Object.assign(book, updateBook);
+    await book.save();
+    return book.toObject();
   }
 
   async deleteBook(id: number): Promise<void> {
-    this.books.delete(id);
+    await Book.findByIdAndDelete(id);
   }
 
   async getBooksWithLowStock(): Promise<Book[]> {
-    return Array.from(this.books.values()).filter(
-      book => book.stock <= book.lowStockThreshold
-    );
+    return Book.find({
+      $expr: {
+        $lte: ["$stock", "$lowStockThreshold"]
+      }
+    }).lean();
   }
 
-  // Category methods
+  // Category management
   async getCategories(): Promise<Category[]> {
-    return Array.from(this.categories.values());
+    return Category.find().lean();
   }
 
   async getCategory(id: number): Promise<Category | undefined> {
-    return this.categories.get(id);
+    const category = await Category.findById(id).lean();
+    return category || undefined;
   }
 
   async createCategory(insertCategory: InsertCategory): Promise<Category> {
-    const id = this.currentId++;
-    const category: Category = { ...insertCategory, id };
-    this.categories.set(id, category);
-    return category;
+    const category = new Category(insertCategory);
+    await category.save();
+    return category.toObject();
   }
 
   async updateCategory(id: number, updateCategory: Partial<InsertCategory>): Promise<Category> {
-    const category = await this.getCategory(id);
+    const category = await Category.findById(id);
     if (!category) throw new Error("Category not found");
-    
-    const updatedCategory = { ...category, ...updateCategory };
-    this.categories.set(id, updatedCategory);
-    return updatedCategory;
+
+    Object.assign(category, updateCategory);
+    await category.save();
+    return category.toObject();
   }
 
   async deleteCategory(id: number): Promise<void> {
-    this.categories.delete(id);
+    await Category.findByIdAndDelete(id);
   }
 
-  // Inventory history methods
+  // Inventory history
   async getInventoryHistory(bookId: number): Promise<InventoryHistory[]> {
-    return Array.from(this.inventoryHistory.values())
-      .filter(history => history.bookId === bookId)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return InventoryHistory.find({ bookId })
+      .sort({ createdAt: -1 })
+      .lean();
   }
 
   async recordInventoryChange(insertHistory: InsertInventoryHistory): Promise<InventoryHistory> {
-    const id = this.currentId++;
-    const history: InventoryHistory = {
-      ...insertHistory,
-      id,
-      createdAt: new Date(),
-    };
-    this.inventoryHistory.set(id, history);
-    return history;
+    const history = new InventoryHistory(insertHistory);
+    await history.save();
+    return history.toObject();
   }
 
-  // Existing order methods
+  // Order management
   async getOrders(): Promise<Order[]> {
-    return Array.from(this.orders.values());
+    return Order.find().lean();
   }
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
-    const id = this.currentId++;
-    const order: Order = {
-      ...insertOrder,
-      id,
-      createdAt: new Date(),
-    };
-    this.orders.set(id, order);
-    
+    const order = new Order(insertOrder);
+
     // Update stock levels and record changes
     for (const item of order.items) {
-      const book = await this.getBook(item.bookId);
+      const book = await Book.findById(item.bookId);
       if (!book) throw new Error(`Book ${item.bookId} not found`);
       if (book.stock < item.quantity) throw new Error(`Insufficient stock for book ${book.title}`);
-      
-      await this.updateBook(item.bookId, { stock: book.stock - item.quantity });
+
+      book.stock -= item.quantity;
+      await book.save();
+
       await this.recordInventoryChange({
         bookId: item.bookId,
         changeAmount: -item.quantity,
-        reason: `order #${id}`,
+        reason: `order #${order._id}`,
       });
     }
-    
-    return order;
+
+    await order.save();
+    return order.toObject();
   }
 
   async updateOrderStatus(id: number, status: Order['status']): Promise<Order> {
-    const order = this.orders.get(id);
+    const order = await Order.findById(id);
     if (!order) throw new Error("Order not found");
-    
+
     // If cancelling the order, restore the stock
     if (status === "cancelled" && order.status !== "cancelled") {
       for (const item of order.items) {
-        const book = await this.getBook(item.bookId);
+        const book = await Book.findById(item.bookId);
         if (!book) continue;
-        
-        await this.updateBook(item.bookId, { stock: book.stock + item.quantity });
+
+        book.stock += item.quantity;
+        await book.save();
+
         await this.recordInventoryChange({
           bookId: item.bookId,
           changeAmount: item.quantity,
@@ -260,11 +179,11 @@ export class MemStorage implements IStorage {
         });
       }
     }
-    
-    const updatedOrder = { ...order, status };
-    this.orders.set(id, updatedOrder);
-    return updatedOrder;
+
+    order.status = status;
+    await order.save();
+    return order.toObject();
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new MongoDBStorage();
