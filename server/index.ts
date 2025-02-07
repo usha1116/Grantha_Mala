@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { db } from "./db";
 
 const app = express();
 app.use(express.json());
@@ -36,7 +37,10 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
+// Wait for MongoDB connection before starting the server
+db.once('open', async () => {
+  log('MongoDB connection ready');
+
   const server = registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -62,4 +66,10 @@ app.use((req, res, next) => {
   server.listen(PORT, "0.0.0.0", () => {
     log(`serving on port ${PORT}`);
   });
-})();
+});
+
+// Handle MongoDB connection errors
+db.on('error', (error) => {
+  log('MongoDB connection error:', error);
+  process.exit(1);
+});
