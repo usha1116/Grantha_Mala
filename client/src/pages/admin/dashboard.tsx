@@ -221,7 +221,7 @@ function CategoryManager() {
           </TableHeader>
           <TableBody>
             {categories?.map((category) => (
-              <TableRow key={category.id}>
+              <TableRow key={category._id}>
                 <TableCell>{category.name}</TableCell>
                 <TableCell>{category.description}</TableCell>
                 <TableCell>

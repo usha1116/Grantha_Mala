@@ -30,7 +30,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.patch("/api/categories/:id", isAdmin, async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = req.params.id;
     const category = await storage.getCategory(id);
     if (!category) return res.status(404).send("Category not found");
 
@@ -39,7 +39,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.delete("/api/categories/:id", isAdmin, async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = req.params.id;
     await storage.deleteCategory(id);
     res.sendStatus(204);
   });
