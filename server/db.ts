@@ -3,6 +3,8 @@ import { log } from './vite';
 import { Book, Category, User } from './models';
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
+import dotenv from "dotenv";
+dotenv.config();
 
 const scryptAsync = promisify(scrypt);
 

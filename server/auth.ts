@@ -31,7 +31,7 @@ async function comparePasswords(supplied: string, stored: string) {
 
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.REPL_ID!,
+    secret: process.env.DB_URL!,
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
@@ -60,7 +60,7 @@ export function setupAuth(app: Express) {
   );
 
   passport.serializeUser((user, done) => {
-    done(null, user._id);
+    done(null, user.id);
   });
 
   passport.deserializeUser(async (id: string, done) => {
@@ -109,3 +109,5 @@ export function setupAuth(app: Express) {
     res.json(req.user);
   });
 }
+
+
